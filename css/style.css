@@ -1,0 +1,60 @@
+html, body {
+  font-family: monospace;
+  margin: 0;
+  background: #000000;
+}
+
+#gameview {
+  display: block;
+  position: fixed;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.hidden {
+  display: none;
+}
+
+.button {
+  font-size: 1em;
+  padding: 10px;
+  margin: 0;
+  margin-right: 10px;
+  display: inline-block;
+  cursor: pointer;
+  border: 1px solid #fff;
+  color: white;
+}
+
+.panel {
+  display: block;
+  position: absolute;
+  border: 1px solid #fff;
+  color: white;
+  align-self: center;
+  padding: 10px;
+  z-index: 2;
+  background-color: #000;
+}
+
+.panel.right {
+  right: 20px;
+}
+
+#mode_selection {
+  position: absolute;
+  display: flex;
+  z-index: 10;
+  top: 10px;
+  left: 10px;
+}
+
+#ui {
+  position: absolute;
+  display:flex;
+  justify-content:center;
+  align-items:flex-end;
+  width:100%;
+  height:100%;
+  z-index: 2;
+}
