@@ -3,20 +3,14 @@ function Game() {
   this.properties = {
     backgroundColor: 0xffffff
   };
+  this.width = window.innerWidth;
+  this.height = window.innerHeight;
 };
 
 Game.prototype.init = function() {
   // Create scene
   this.scene = new THREE.Scene();
   this.scene.background = new THREE.Color(this.properties.backgroundColor);
-
-  // Create camera
-  this.camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 10000);
-  this.camera.up.set(0, 0, 1);
-  this.camera.position.x = 1;
-  this.camera.position.y = 1;
-  this.camera.position.z = 1;
-  this.camera.lookAt(0,0,0);
 
   // Create renderer
   this.renderer = new THREE.WebGLRenderer();
@@ -38,7 +32,11 @@ Game.prototype.init = function() {
     that.onTouchMove(e);
   }, false);
 
+  // Create world
   this.initWorld();
+
+  // Create cameras
+  this.initViews();
 
   // Create debug renderer
   this.cannonDebugRenderer = new THREE.CannonDebugRenderer(this.scene, this.world);
@@ -65,6 +63,74 @@ Game.prototype.init = function() {
   this.update();
 }
 
+Game.prototype.initViews = function() {
+  var that = this;
+  this.views = [
+    {
+      left: 0,
+      top: 0,
+      width: 0.5,
+      height: 1.0,
+      up: [ 0, 0, 1 ],
+      fov: 45,
+      background: new THREE.Color(1, 1, 1),
+      updateCamera: function (camera) {
+        var position = that.player1.getPosition();
+        camera.position.x = position.x - 1;
+        camera.position.y = position.y - 1;
+        camera.position.z = position.z + 0.2;
+        camera.lookAt(position);
+      }
+    },
+    {
+      left: 0.5,
+      top: 0,
+      width: 0.5,
+      height: 1.0,
+      up: [ 0, 0, 1 ],
+      fov: 45,
+      background: new THREE.Color(1, 1, 1),
+      updateCamera: function (camera) {
+        var position = that.player2.getPosition();
+        camera.position.x = position.x - 1;
+        camera.position.y = position.y - 1;
+        camera.position.z = position.z + 0.2;
+        camera.lookAt(position);
+      }
+    }
+  ];
+  for (var i =  0; i < this.views.length; i++) {
+    var view = this.views[i];
+    var camera = new THREE.PerspectiveCamera(view.fov, window.innerWidth / window.innerHeight, 0.1, 10000);
+    camera.up.fromArray(view.up);
+    view.camera = camera;
+  }
+}
+
+Game.prototype.updateViews = function() {
+  for (var i = 0; i < this.views.length; i++) {
+    var view = this.views[i];
+    var camera = view.camera;
+
+    view.updateCamera(camera);
+
+    var left = Math.floor(this.width * view.left);
+    var top = Math.floor(this.height * view.top);
+    var width = Math.floor(this.width * view.width);
+    var height = Math.floor(this.height * view.height);
+
+    this.renderer.setViewport(left, top, width, height);
+    this.renderer.setScissor(left, top, width, height);
+    this.renderer.setScissorTest(true);
+    this.renderer.setClearColor(view.background);
+
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+
+    this.renderer.render(this.scene, camera);
+  }
+}
+
 Game.prototype.initWorld = function() {
 
   // Setup our world
@@ -83,8 +149,8 @@ Game.prototype.initWorld = function() {
   this.player1 = new Player(this.scene, this.world);
   this.player2 = new Player(this.scene, this.world);
 
-  this.player1.setPosition(0.5, 0.5, 5);
-  this.player2.setPosition(0.55, 0.75, 5);
+  this.player1.setPosition(2.5, 2.5, 5);
+  this.player2.setPosition(2.55, 2.75, 5);
 
   // Create heightmap
   var heightmap = new Heightmap();
@@ -114,11 +180,9 @@ Game.prototype.update = function() {
   this.player1.update();
   this.player2.update();
 
-  // Update camera
-  this.updateCamera();
-
   // Render scene
-  this.renderer.render(this.scene, this.camera);
+  // this.renderer.render(this.scene, this.camera);
+  this.updateViews();
 
   // Update game time
   this.lastFrame = this.currentFrame;
@@ -161,18 +225,9 @@ Game.prototype.jump = function() {
   this.player2.jump();
 }
 
-Game.prototype.updateCamera = function() {
-  // Follow player1
-  var position = this.player1.getPosition();
-  this.camera.position.x = position.x - 15;
-  this.camera.position.y = position.y;
-  this.camera.position.z = position.z + 10;
-  this.camera.lookAt(position);
-}
-
 Game.prototype.onWindowResize = function() {
-  this.camera.aspect = window.innerWidth / window.innerHeight;
-  this.camera.updateProjectionMatrix();
+  this.width = window.innerWidth;
+  this.height = window.innerHeight;
   this.renderer.setSize(window.innerWidth * this.scaleFactor, window.innerHeight * this.scaleFactor, false);
 }
 
