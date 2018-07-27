@@ -141,6 +141,26 @@ Game.prototype.applyForce = function(x, y, z) {
   this.player2.applyForce(x, y, z);
 }
 
+Game.prototype.sprint = function() {
+  this.player1.sprint();
+  this.player2.sprint();
+}
+
+Game.prototype.leanLeft = function() {
+  this.player1.leanLeft();
+  this.player2.leanLeft();
+}
+
+Game.prototype.leanRight = function() {
+  this.player1.leanRight();
+  this.player2.leanRight();
+}
+
+Game.prototype.jump = function() {
+  this.player1.jump();
+  this.player2.jump();
+}
+
 Game.prototype.updateCamera = function() {
   // Follow player1
   var position = this.player1.getPosition();

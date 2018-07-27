@@ -5,13 +5,15 @@ App.controller('Main', function($scope) {
 
   $scope.$on("KeyDown", function(event, data) {
     if (data.keyCode === 38) { // Up arrow
-      game.applyForce(1, 0, 0);
+      game.sprint();
     } else if (data.keyCode === 37) { // Left arrow
-      game.applyForce(0, 1, 0);
+      game.leanLeft();
     } else if (data.keyCode === 40) { // Down arrow
-      game.applyForce(-1, 0, 0);
+      // game.applyForce(-1, 0, 0);
     } else if (data.keyCode === 39) { // Right arrow
-      game.applyForce(0, -1, 0);
+      game.leanRight();
+    } else if (data.keyCode === 32) { // Space
+      game.jump();
     }
   });
 });

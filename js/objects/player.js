@@ -2,6 +2,7 @@ function Player(scene, world) {
   this.scene = scene;
   this.world = world;
   this.radius = 0.1;
+  this.force = 8;
 
   this.createBody();
   this.createModel();
@@ -19,7 +20,7 @@ Player.prototype.createBody = function() {
   // Create a sphere
   this.body = new CANNON.Body({
     mass: 1,
-    position: new CANNON.Vec3(0, 0, 0), // m
+    position: new CANNON.Vec3(0, 0, 0),
     shape: new CANNON.Sphere(this.radius)
   });
   this.world.addBody(this.body);
@@ -36,8 +37,36 @@ Player.prototype.getPosition = function() {
 }
 
 Player.prototype.applyForce = function(x, y, z) {
-  var force = 10;
-  this.body.applyForce(new CANNON.Vec3(x * force, y * force, z * force), this.body.position);
+  this.body.applyForce(new CANNON.Vec3(x, y, z), this.body.position);
+}
+
+Player.prototype.sprint = function() {
+  var currentDirection = vec2.fromValues(this.body.velocity.x, this.body.velocity.y);
+  vec2.normalize(currentDirection, currentDirection);
+  vec2.scale(currentDirection, currentDirection, this.force);
+  this.applyForce(currentDirection[0], currentDirection[1], 0);
+}
+
+Player.prototype.applyForceSideways = function(force) {
+  var currentDirection = vec3.fromValues(this.body.velocity.x, this.body.velocity.y, 0);
+  var verticalDirection = vec3.fromValues(0, 0, 1);
+  vec3.cross(currentDirection, currentDirection, verticalDirection);
+
+  vec2.normalize(currentDirection, currentDirection);
+  vec2.scale(currentDirection, currentDirection, force);
+  this.applyForce(currentDirection[0], currentDirection[1], 0);
+}
+
+Player.prototype.leanLeft = function() {
+  this.applyForceSideways(-this.force);
+}
+
+Player.prototype.leanRight = function() {
+  this.applyForceSideways(this.force);
+}
+
+Player.prototype.jump = function() {
+  this.body.applyImpulse(new CANNON.Vec3(0, 0, 1), this.body.position);
 }
 
 Player.prototype.update = function() {
