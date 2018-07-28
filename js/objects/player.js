@@ -6,14 +6,28 @@ function Player(scene, world) {
 
   this.createBody();
   this.createModel();
+  this.createLight();
 }
 
 Player.prototype.createModel = function() {
   // Create mesh
   var geometry = new THREE.SphereGeometry(this.radius, 32, 32 );
-  var material = new THREE.MeshLambertMaterial({color: 0xffff00});
+  var material = new THREE.MeshLambertMaterial({color: 0xeeee00});
   this.mesh = new THREE.Mesh(geometry, material);
+  this.mesh.castShadow = true;
   this.scene.add(this.mesh);
+}
+
+Player.prototype.createLight = function() {
+  this.light = new THREE.DirectionalLight(0xffffff, 0.125);
+  this.light.castShadow = true;
+  this.light.shadow.mapSize.width = 512;
+  this.light.shadow.mapSize.height = 512;
+  this.light.shadow.camera.far = 50;
+  this.scene.add(this.light);
+  this.scene.add(this.light.target);
+  // var helper = new THREE.CameraHelper(this.light.shadow.camera);
+  // this.scene.add(helper);
 }
 
 Player.prototype.createBody = function() {
@@ -75,4 +89,12 @@ Player.prototype.update = function() {
   this.mesh.position.x = position.x;
   this.mesh.position.y = position.y;
   this.mesh.position.z = position.z;
+
+  this.light.position.x = position.x;
+  this.light.position.y = position.y;
+  this.light.position.z = position.z + 10;
+
+  this.light.target.position.x = position.x;
+  this.light.target.position.y = position.y;
+  this.light.target.position.z = position.z - 10;
 }

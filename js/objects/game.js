@@ -1,7 +1,7 @@
 function Game() {
   this.scaleFactor = 1;
   this.properties = {
-    backgroundColor: 0xffffff
+    backgroundColor: 0x96e3ff
   };
   this.width = window.innerWidth;
   this.height = window.innerHeight;
@@ -18,6 +18,10 @@ Game.prototype.init = function() {
   this.renderer.setSize(window.innerWidth * this.scaleFactor, window.innerHeight * this.scaleFactor, false);
   this.renderer.domElement.id = "gameview";
   $("body").append(this.renderer.domElement);
+
+  // Enable shadows
+  this.renderer.shadowMap.enabled = true;
+  this.renderer.shadowMapSoft = true;
 
   // Create stats
   this.stats = new Stats();
@@ -48,21 +52,8 @@ Game.prototype.init = function() {
   this.cannonDebugRenderer = new THREE.CannonDebugRenderer(this.scene, this.world);
 
   // Add light
-  var ambientLight = new THREE.AmbientLight( 0x111111 );
-  this.scene.add( ambientLight );
-
-  var lights = [];
-  lights[ 0 ] = new THREE.PointLight( 0xffffff, 1, 0 );
-  lights[ 1 ] = new THREE.PointLight( 0xffffff, 1, 0 );
-  lights[ 2 ] = new THREE.PointLight( 0xffffff, 1, 0 );
-
-  lights[ 0 ].position.set( 0, 200, 0 );
-  lights[ 1 ].position.set( 100, 200, 100 );
-  lights[ 2 ].position.set( - 100, - 200, - 100 );
-
-  this.scene.add( lights[ 0 ] );
-  this.scene.add( lights[ 1 ] );
-  this.scene.add( lights[ 2 ] );
+  var ambientLight = new THREE.AmbientLight(0xacacac);
+  this.scene.add(ambientLight);
 
   // Start game
   this.lastFrame = new Date();
@@ -197,7 +188,7 @@ Game.prototype.initWorld = function() {
 
   // Create heightmap
   var heightmap = new Heightmap();
-  heightmap.imagesToPlane(["levels/map_jump.png", "levels/alpha.png"], this.scene, this.world);
+  heightmap.imagesToPlane(["levels/map_jump.png", "levels/map_jump_color.png"], this.scene, this.world);
 }
 
 Game.prototype.reset = function() {
@@ -227,7 +218,6 @@ Game.prototype.update = function() {
   this.player2.update();
 
   // Render scene
-  // this.renderer.render(this.scene, this.camera);
   this.updateViews();
 
   // Update game time
