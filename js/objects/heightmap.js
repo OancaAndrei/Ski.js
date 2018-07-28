@@ -1,9 +1,7 @@
 function Heightmap() {
 }
 
-Heightmap.prototype.fromImage = function(image, scale, channels) {
-  channels = channels ? channels : [0, 1, 2];
-  scale = scale ? scale : 1;
+Heightmap.prototype.getChannels = function(image, channels) {
   // Create temp canvas
   var canvas = document.createElement('canvas');
   canvas.width = image.width;
@@ -11,22 +9,27 @@ Heightmap.prototype.fromImage = function(image, scale, channels) {
   var context = canvas.getContext('2d');
   // Create data container
   var size = image.width * image.height;
-  var data = new Float32Array(size);
+  var data = [];
+  for (var k = 0; k < channels.length; k++) {
+    data[k] = new Float32Array(size)
+  }
   // Get image data
   context.drawImage(image, 0, 0);
   var imageData = context.getImageData(0, 0, image.width, image.height);
   var pixels = imageData.data;
   // Set data to zero
   for (var i = 0; i < size; i++) {
-    data[i] = 0;
+    for (var k = 0; k < channels.length; k++) {
+      data[k][i] = 0;
+    }
   }
-  // Convert RGB to height
+  // Split channels to layers
   for (var i = 0, j = 0; i < pixels.length; i += 4) {
     var sum = 0;
     for (var k = 0; k < channels.length; k++) {
-      sum += pixels[i + channels[k]];
+      data[k][j] = pixels[i + channels[k]] / 255.0;
     }
-    data[j++] = sum / (255 * channels.length) * scale;
+    j++;
   }
   return data;
 }
