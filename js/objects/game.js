@@ -19,6 +19,11 @@ Game.prototype.init = function() {
   this.renderer.domElement.id = "gameview";
   $("body").append(this.renderer.domElement);
 
+  // Create stats
+  this.stats = new Stats();
+  this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+  document.body.appendChild(this.stats.dom);
+
   var that = this;
   // Register window resize event
   window.addEventListener('resize', this.onWindowResizeCallback = function(e) {
@@ -202,6 +207,9 @@ Game.prototype.end = function() {
 }
 
 Game.prototype.update = function() {
+  // Start stats
+  this.stats.begin();
+
   // Update game time
   this.currentFrame = new Date();
   this.delta = (this.currentFrame - this.lastFrame) / 1000;
@@ -224,6 +232,9 @@ Game.prototype.update = function() {
 
   // Update game time
   this.lastFrame = this.currentFrame;
+
+  // End stats
+  this.stats.end();
 
   // Request next frame
   var game = this;
