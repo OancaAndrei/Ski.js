@@ -74,28 +74,8 @@ Heightmap.prototype.imagesToPlane = function(sources, scene, world) {
       return 5 * data[0] - 2 * data[1] + extra;
     });
 
-    // Create plane
+    // Create physic body
     var size = 64;
-    var geometry = new THREE.PlaneGeometry(size, size, size - 1, size - 1);
-    var texture = new THREE.TextureLoader().load(sources[1]);
-    var alpha = new THREE.TextureLoader().load(sources[2]);
-    var material = new THREE.MeshBasicMaterial({map: texture});
-    // material.side = THREE.DoubleSide;
-    var plane = new THREE.Mesh(geometry, material);
-    plane.position.x = size;
-    plane.position.y = size;
-    plane.rotation.z = Math.PI / 2;
-    plane.scale.x = 2;
-    plane.scale.y = 2;
-    // plane.scale.z = 2;
-
-    // Set height of vertices
-    for (var i = 0; i < plane.geometry.vertices.length; i++) {
-      plane.geometry.vertices[i].z = data[i];
-    }
-
-    scene.add(plane);
-
     var heights = [];
     for (var i = 0; i < size; i++) {
       heights.push([]);
@@ -103,15 +83,76 @@ Heightmap.prototype.imagesToPlane = function(sources, scene, world) {
         heights[i].push(data[i * size + j]);
       }
     }
-
-    // console.log(JSON.stringify(heights));
-
-    // Create physic body
     var heightfieldShape = new CANNON.Heightfield(heights, {
-      elementSize: 2
+      elementSize: 2.5
     });
     var heightfieldBody = new CANNON.Body({ mass: 0 });
     heightfieldBody.addShape(heightfieldShape);
     world.addBody(heightfieldBody);
+
+    // Create plane
+    var texture = new THREE.TextureLoader().load(sources[0]);
+    var alpha = new THREE.TextureLoader().load(sources[1]);
+    var material = new THREE.MeshBasicMaterial({map: texture, alphaMap: alpha});
+
+    // Create plane from physic body
+    var geometry = new THREE.Geometry();
+    var v0 = new CANNON.Vec3();
+    var v1 = new CANNON.Vec3();
+    var v2 = new CANNON.Vec3();
+    var shape = heightfieldShape;
+    for (var xi = 0; xi < shape.data.length - 1; xi++) {
+      for (var yi = 0; yi < shape.data[xi].length - 1; yi++) {
+        for (var k = 0; k < 2; k++) {
+          shape.getConvexTrianglePillar(xi, yi, k === 0);
+          v0.copy(shape.pillarConvex.vertices[0]);
+          v1.copy(shape.pillarConvex.vertices[1]);
+          v2.copy(shape.pillarConvex.vertices[2]);
+          v0.vadd(shape.pillarOffset, v0);
+          v1.vadd(shape.pillarOffset, v1);
+          v2.vadd(shape.pillarOffset, v2);
+          geometry.vertices.push(
+            new THREE.Vector3(v0.x, v0.y, v0.z),
+            new THREE.Vector3(v1.x, v1.y, v1.z),
+            new THREE.Vector3(v2.x, v2.y, v2.z)
+          );
+          var i = geometry.vertices.length - 3;
+          geometry.faces.push(new THREE.Face3(i, i + 1, i + 2));
+        }
+      }
+    }
+    geometry.computeBoundingSphere();
+    geometry.computeFaceNormals();
+    geometry.computeBoundingBox();
+
+    // Calculate UV map
+    var max = geometry.boundingBox.max,
+    min = geometry.boundingBox.min;
+    var offset = new THREE.Vector2(0, 0);
+    var range = new THREE.Vector2(max.x, max.y);
+    var faces = geometry.faces;
+    geometry.faceVertexUvs[0] = [];
+    for (var i = 0; i < faces.length; i++) {
+      var v1 = geometry.vertices[faces[i].a],
+      v2 = geometry.vertices[faces[i].b],
+      v3 = geometry.vertices[faces[i].c];
+      geometry.faceVertexUvs[0].push([
+        new THREE.Vector2((v1.x + offset.x) / range.x, (v1.y + offset.y) / range.y),
+        new THREE.Vector2((v2.x + offset.x) / range.x, (v2.y + offset.y) / range.y),
+        new THREE.Vector2((v3.x + offset.x) / range.x, (v3.y + offset.y) / range.y)
+      ]);
+    }
+    geometry.uvsNeedUpdate = true;
+
+    // Rotate texture
+    var texture = material.map;
+    texture.offset.set(0, 0);
+    texture.center.set(0.5, 0.5);
+    texture.repeat.set(1, 1);
+    texture.rotation = Math.PI / 2;
+
+    // Create mesh
+    mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
   });
 }
