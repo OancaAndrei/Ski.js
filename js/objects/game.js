@@ -5,6 +5,7 @@ function Game() {
   };
   this.width = window.innerWidth;
   this.height = window.innerHeight;
+  this.replay = false;
 };
 
 Game.prototype.init = function() {
@@ -63,6 +64,39 @@ Game.prototype.init = function() {
   this.update();
 }
 
+Game.prototype.trackPlayerCamera = function(camera, player) {
+  var position = player.getPosition();
+  camera.position.x = position.x - 1;
+  camera.position.y = position.y - 1;
+  camera.position.z = position.z + 0.2;
+  camera.lookAt(position);
+}
+
+Game.prototype.frontPlayerCamera = function(camera, player) {
+  var position = player.getPosition();
+  camera.position.x = position.x + 1;
+  camera.position.y = position.y + 1;
+  camera.position.z = position.z + 0.2;
+  camera.lookAt(position);
+}
+
+Game.prototype.replayPlayerCamera = function(camera, player) {
+  var position = player.getPosition();
+  var pos = position.x > position.y ? position.x : position.y;
+  camera.position.x = pos - 1;
+  camera.position.y = pos - 1;
+  camera.position.z = position.z + 0.2;
+  camera.lookAt(position);
+}
+
+Game.prototype.distancePlayerCamera = function(camera, player) {
+  var position = player.getPosition();
+  camera.position.x = position.x - 10;
+  camera.position.y = position.y;
+  camera.position.z = position.z + 20;
+  camera.lookAt(position);
+}
+
 Game.prototype.initViews = function() {
   var that = this;
   this.views = [
@@ -75,11 +109,13 @@ Game.prototype.initViews = function() {
       fov: 45,
       background: new THREE.Color(1, 1, 1),
       updateCamera: function (camera) {
-        var position = that.player1.getPosition();
-        camera.position.x = position.x - 1;
-        camera.position.y = position.y - 1;
-        camera.position.z = position.z + 0.2;
-        camera.lookAt(position);
+        if (that.replay) {
+          // Replay camera
+          that.replayPlayerCamera(camera, that.player1);
+        } else {
+          // Track player camera
+          that.trackPlayerCamera(camera, that.player1);
+        }
       }
     },
     {
@@ -91,11 +127,13 @@ Game.prototype.initViews = function() {
       fov: 45,
       background: new THREE.Color(1, 1, 1),
       updateCamera: function (camera) {
-        var position = that.player2.getPosition();
-        camera.position.x = position.x - 1;
-        camera.position.y = position.y - 1;
-        camera.position.z = position.z + 0.2;
-        camera.lookAt(position);
+        if (that.replay) {
+          // Replay camera
+          that.replayPlayerCamera(camera, that.player2);
+        } else {
+          // Track player camera
+          that.trackPlayerCamera(camera, that.player2);
+        }
       }
     }
   ];
