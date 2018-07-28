@@ -68,13 +68,14 @@ Heightmap.prototype.imagesToPlane = function(sources, scene, world) {
   var that = this;
   this.loadImages(sources, function(images) {
     // Get height data from images
-    // var valley = that.fromImage(images[0], 1, [0]);
-    var valley = that.fromImage(images[1], 1, [0]);
-    var track = that.fromImage(images[1], 1, [1]);
+    var layers = that.getChannels(images[0], [0, 1, 2]);
+    var valley = layers[0];
+    var track = layers[1];
+    var jumps = layers[2];
 
-    var data = that.mergeLayers([valley, track], function(data) {
+    var data = that.mergeLayers([valley, track, jumps], function(data) {
       var extra = data[1] === 0 ? 1 : 0;
-      return 5 * data[0] - 2 * data[1] + extra;
+      return 5 * data[0] - 3 * data[1] + extra - 10 * (1 - data[2]) * data[1] + 100;
     });
 
     // Create physic body

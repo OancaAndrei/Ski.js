@@ -149,12 +149,12 @@ Game.prototype.initWorld = function() {
   this.player1 = new Player(this.scene, this.world);
   this.player2 = new Player(this.scene, this.world);
 
-  this.player1.setPosition(2.5, 2.5, 5);
-  this.player2.setPosition(2.55, 2.75, 5);
+  this.player1.setPosition(2.65, 2.5, 102);
+  this.player2.setPosition(2.5, 2.75, 102);
 
   // Create heightmap
   var heightmap = new Heightmap();
-  heightmap.imagesToPlane(["levels/heightmap.png", "levels/map.png", "levels/alpha.png"], this.scene, this.world);
+  heightmap.imagesToPlane(["levels/map_jump.png", "levels/alpha.png"], this.scene, this.world);
 }
 
 Game.prototype.reset = function() {
