@@ -31,7 +31,7 @@ Heightmap.prototype.getChannels = function(image, channels) {
     }
     j++;
   }
-  return data;
+  return {width: image.width, height: image.height, data: data};
 }
 
 Heightmap.prototype.loadImages = function(sources, callback) {
@@ -64,14 +64,37 @@ Heightmap.prototype.mergeLayers = function(layers, merge) {
   return finalHeightmap;
 }
 
+Heightmap.prototype.arrayToHeight = function(array, size) {
+  var heights = [];
+  for (var i = 0; i < size; i++) {
+    heights.push([]);
+    for (var j = 0; j < size; j++) {
+      heights[i].push(array[i * size + j]);
+    }
+  }
+  return heights;
+}
+
+Heightmap.prototype.getHeightFromLayers = function(x, y) {
+  var data = [];
+  for (var j = 0; j < this.layers.length; j++) {
+    data[j] = this.layers[j][y * this.size + x];
+  }
+  return 5 * data[0] - 10 * (1 - data[2]) + 97;
+}
+
 Heightmap.prototype.imagesToPlane = function(sources, scene, world) {
   var that = this;
+  this.world = world;
+  this.scene = scene;
   this.loadImages(sources, function(images) {
     // Get height data from images
-    var layers = that.getChannels(images[0], [0, 1, 2]);
-    var valley = layers[0];
-    var track = layers[1];
-    var jumps = layers[2];
+    var channels = that.getChannels(images[0], [0, 1, 2]);
+    that.layers = channels.data;
+    that.size = channels.width;
+    var valley = that.layers[0];
+    var track = that.layers[1];
+    var jumps = that.layers[2];
 
     var data = that.mergeLayers([valley, track, jumps], function(data) {
       var extra = data[1] === 0 ? 1 : 0;
@@ -79,15 +102,7 @@ Heightmap.prototype.imagesToPlane = function(sources, scene, world) {
     });
 
     // Create physic body
-    var size = 64;
-    var heights = [];
-    for (var i = 0; i < size; i++) {
-      heights.push([]);
-      for (var j = 0; j < size; j++) {
-        heights[i].push(data[i * size + j]);
-      }
-    }
-    var heightfieldShape = new CANNON.Heightfield(heights, {
+    var heightfieldShape = new CANNON.Heightfield(that.arrayToHeight(data, 64), {
       elementSize: 2.5
     });
     var heightfieldBody = new CANNON.Body({ mass: 0 });
@@ -95,9 +110,8 @@ Heightmap.prototype.imagesToPlane = function(sources, scene, world) {
     world.addBody(heightfieldBody);
 
     // Create plane
-    var texture = new THREE.TextureLoader().load(sources[0]);
-    var alpha = new THREE.TextureLoader().load(sources[1]);
-    var material = new THREE.MeshBasicMaterial({map: texture, alphaMap: alpha});
+    var texture = new THREE.TextureLoader().load(sources[1]);
+    var material = new THREE.MeshPhongMaterial({map: texture});
 
     // Create plane from physic body
     var geometry = new THREE.Geometry();
@@ -158,5 +172,124 @@ Heightmap.prototype.imagesToPlane = function(sources, scene, world) {
     // Create mesh
     mesh = new THREE.Mesh(geometry, material);
     scene.add(mesh);
+
+    // Place obstacles
+    that.placeObstacles();
+  });
+}
+
+Heightmap.prototype.placeObstacles = function() {
+  var that = this;
+  // Get track min and max x for every y
+  var track = this.layers[1];
+  var ys = [];
+  for (var y = 0; y < this.size; y++) {
+    var min = -1;
+    for (var x = 0; x < this.size; x++) {
+      var isTrack = track[y * this.size + x] > 0.05;
+      if (isTrack && min === -1) {
+        min = x + 0;
+      }
+      if (!isTrack && min !== -1) {
+        ys[y] = [min + 0, x + 0];
+        break;
+      }
+    }
+    if (ys[y] === undefined) {
+      ys[y] = [min + 0, this.size -1];
+    }
+  }
+  // Create obstacles
+  var obstacles = [];
+  for (var y = 0; y < ys.length; y++) {
+    if (ys[y].length === 0) continue;
+    // Coordinates are flipped
+    var y1 = ys[y][0];
+    var y2 = ys[y][1];
+    var x = y;
+    // Randomize position
+    var middle = (y1 + y2) / 2;
+    var width = middle - y1;
+    var randomY = width * (Math.random() - 0.5) + middle;
+    // Get height
+    var z = this.getHeightFromLayers(x, Math.round(randomY));
+    // Random model
+    var model = Math.random() >= 0.7 ? 0 : 1;
+    // Create shape
+    var shape;
+    if (model === 0) {
+      shape = new CANNON.Sphere(0.5);
+    } else {
+      shape = new CANNON.Cylinder(0.1, 0.1, 2, 3);
+    }
+    // Create body
+    var body = new CANNON.Body({
+      mass: 0,
+      position: new CANNON.Vec3(x * 2.5, randomY * 2.5, z),
+      shape: shape
+    });
+    this.world.addBody(body);
+    // Save position
+    obstacles.push([x * 2.5, randomY * 2.5, z, model]);
+  }
+  // Load models
+  var models = [];
+  var counter = 2;
+  var onModelLoaded = function(model, type) {
+    models[type] = model;
+    counter--;
+    if (counter === 0) {
+      for (var i = 0; i < obstacles.length; i++) {
+        var type = obstacles[i][3];
+        var mesh = models[type].clone();
+        mesh.castShadow = true;
+        mesh.traverse(function(child) {
+          child.castShadow = true;
+        });
+        if (type === 0) {
+          mesh.scale.set(0.6, 0.6, 0.6); // Rock
+        } else {
+          mesh.scale.set(0.2, 0.2, 0.2); // Tree
+        }
+        mesh.position.x = obstacles[i][0];
+        mesh.position.y = obstacles[i][1];
+        mesh.position.z = obstacles[i][2];
+        // Rotate rock
+        if (type === 0) {
+          mesh.rotation.x = Math.random();
+          mesh.rotation.y = Math.random();
+          mesh.rotation.z = Math.random();
+        }
+        that.scene.add(mesh);
+      }
+    }
+  }
+  // Load Rock model
+  var mtlLoader = new THREE.MTLLoader();
+  mtlLoader.setPath('assets/models/');
+  mtlLoader.load('Rock.mtl', function(materials) {
+    materials.preload();
+    // Create model
+    var objLoader = new THREE.OBJLoader();
+    objLoader.setPath('assets/models/');
+    objLoader.setMaterials(materials);
+    // Load model
+    objLoader.load('Rock.obj', function(object) {
+      onModelLoaded(object, 0);
+    });
+  });
+  // Load Tree model
+  var mtlLoader = new THREE.MTLLoader();
+  mtlLoader.setPath('assets/models/');
+  mtlLoader.load('Tree.mtl', function(materials) {
+    materials.preload();
+    // Create model
+    var objLoader = new THREE.OBJLoader();
+    objLoader.setPath('assets/models/');
+    objLoader.setMaterials(materials);
+    // Load model
+    objLoader.load('Tree.obj', function(object) {
+      onModelLoaded(object, 1);
+    });
   });
 }
