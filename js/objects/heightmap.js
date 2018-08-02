@@ -171,6 +171,7 @@ Heightmap.prototype.imagesToPlane = function(sources, scene, world) {
 
     // Create mesh
     mesh = new THREE.Mesh(geometry, material);
+    mesh.receiveShadow = true;
     scene.add(mesh);
 
     // Place obstacles

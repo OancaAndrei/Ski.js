@@ -1,7 +1,7 @@
 function Game() {
   this.scaleFactor = 1;
   this.properties = {
-    backgroundColor: 0x96e3ff
+    backgroundColor: 0x4f7790
   };
   this.width = window.innerWidth;
   this.height = window.innerHeight;
@@ -51,10 +51,6 @@ Game.prototype.init = function() {
   // Create debug renderer
   this.cannonDebugRenderer = new THREE.CannonDebugRenderer(this.scene, this.world);
 
-  // Add light
-  var ambientLight = new THREE.AmbientLight(0xacacac);
-  this.scene.add(ambientLight);
-
   // Start game
   this.lastFrame = new Date();
   this.update();
@@ -62,9 +58,11 @@ Game.prototype.init = function() {
 
 Game.prototype.trackPlayerCamera = function(camera, player) {
   var position = player.getPosition();
-  camera.position.x = position.x - 1;
-  camera.position.y = position.y - 1;
-  camera.position.z = position.z + 0.2;
+  position = new THREE.Vector3().copy(position);
+  camera.position.x = position.x - 0.5;
+  camera.position.y = position.y - 0.5;
+  camera.position.z = position.z + 0.3;
+  position.z += 0.2;
   camera.lookAt(position);
 }
 
@@ -182,13 +180,45 @@ Game.prototype.initWorld = function() {
   // Create players
   this.player1 = new Player(this.scene, this.world);
   this.player2 = new Player(this.scene, this.world);
+  this.player1.setPosition(2.65, 2.5, 102.5);
+  this.player2.setPosition(2.5, 2.75, 102.5);
 
-  this.player1.setPosition(2.65, 2.5, 102);
-  this.player2.setPosition(2.5, 2.75, 102);
+  // Create lights
+  this.createLights();
 
   // Create heightmap
   var heightmap = new Heightmap();
   heightmap.imagesToPlane(["levels/map_jump.png", "levels/map_jump_color.png"], this.scene, this.world);
+}
+
+Game.prototype.createLights = function() {
+  var ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+  this.scene.add(ambientLight);
+
+  this.light = new THREE.DirectionalLight(0xffffff, 0.3);
+  this.light.castShadow = true;
+  this.light.shadow.mapSize.width = 8192;
+  this.light.shadow.mapSize.height = 8192;
+  this.light.shadow.camera.far = 800;
+  this.scene.add(this.light);
+  this.scene.add(this.light.target);
+
+  var d = 64;
+  this.light.shadow.camera.left = -d;
+  this.light.shadow.camera.right = d;
+  this.light.shadow.camera.top = d;
+  this.light.shadow.camera.bottom = -d;
+
+  this.light.position.x = 250;
+  this.light.position.y = 200;
+  this.light.position.z = 200;
+
+  this.light.target.position.x = 50;
+  this.light.target.position.y = 50;
+  this.light.target.position.z = 110;
+
+  // var helper = new THREE.CameraHelper(this.light.shadow.camera);
+  // this.scene.add(helper);
 }
 
 Game.prototype.reset = function() {

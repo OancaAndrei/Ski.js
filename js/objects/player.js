@@ -6,7 +6,6 @@ function Player(scene, world) {
 
   this.createBody();
   this.createModel();
-  this.createLight();
 }
 
 Player.prototype.createModel = function() {
@@ -22,33 +21,20 @@ Player.prototype.createModel = function() {
     objLoader.setMaterials(materials);
     // Load model
     objLoader.load('Snowman.obj', function(object) {
-        that.mesh = object;
-        that.mesh.traverse(function(child) {
-          child.castShadow = true;
-        });
-        object.scale.set(0.05, 0.05, 0.05);
-        that.scene.add(object);
-      },
-      function(xhr) {
-        console.log((xhr.loaded / xhr.total * 100 ) + '% loaded');
-      },
-      function(error) {
-        console.log('An error happened:', error);
-      }
-    );
+      that.mesh = object;
+      that.mesh.traverse(function(child) {
+        child.castShadow = true;
+      });
+      object.scale.set(0.05, 0.05, 0.05);
+      that.scene.add(object);
+    },
+    function(xhr) {
+      console.log((xhr.loaded / xhr.total * 100 ) + '% loaded');
+    },
+    function(error) {
+      console.log('An error happened:', error);
+    });
   });
-}
-
-Player.prototype.createLight = function() {
-  this.light = new THREE.DirectionalLight(0xffffff, 0.125);
-  this.light.castShadow = true;
-  this.light.shadow.mapSize.width = 512;
-  this.light.shadow.mapSize.height = 512;
-  this.light.shadow.camera.far = 50;
-  this.scene.add(this.light);
-  this.scene.add(this.light.target);
-  // var helper = new THREE.CameraHelper(this.light.shadow.camera);
-  // this.scene.add(helper);
 }
 
 Player.prototype.createBody = function() {
@@ -130,12 +116,4 @@ Player.prototype.update = function() {
     this.mesh.position.z = position.z - this.radius;
     this.mesh.rotation.z = this.getMeshRotation();
   }
-
-  this.light.position.x = position.x;
-  this.light.position.y = position.y;
-  this.light.position.z = position.z + 10;
-
-  this.light.target.position.x = position.x;
-  this.light.target.position.y = position.y;
-  this.light.target.position.z = position.z - 10;
 }
