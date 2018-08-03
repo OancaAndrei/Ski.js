@@ -83,7 +83,7 @@ Heightmap.prototype.getHeightFromLayers = function(x, y) {
   return 5 * data[0] - 10 * (1 - data[2]) + 97;
 }
 
-Heightmap.prototype.imagesToPlane = function(sources, scene, world) {
+Heightmap.prototype.imagesToPlane = function(sources, scene, world, callback) {
   var that = this;
   this.world = world;
   this.scene = scene;
@@ -176,6 +176,9 @@ Heightmap.prototype.imagesToPlane = function(sources, scene, world) {
 
     // Place obstacles
     that.placeObstacles();
+
+    // Callback
+    callback();
   });
 }
 

@@ -164,7 +164,7 @@ Game.prototype.updateViews = function() {
 }
 
 Game.prototype.initWorld = function() {
-
+  var that = this;
   // Setup our world
   this.world = new CANNON.World();
   this.world.gravity.set(0, 0, -5.82); // m/s²
@@ -187,8 +187,65 @@ Game.prototype.initWorld = function() {
   this.createLights();
 
   // Create heightmap
-  var heightmap = new Heightmap();
-  heightmap.imagesToPlane(["levels/map_jump.png", "levels/map_jump_color.png"], this.scene, this.world);
+  this.heightmap = new Heightmap();
+  this.heightmap.imagesToPlane(["levels/map_jump.png", "levels/map_jump_color.png"], this.scene, this.world, function() {
+    // Create finish line
+    that.createFinishLine();
+  });
+
+}
+
+Game.prototype.createFinishLine = function() {
+  var that = this;
+
+  var geometry = new THREE.PlaneGeometry(1, 2.2);
+  var material = new THREE.MeshBasicMaterial({color: 0xffff00, side: THREE.DoubleSide});
+  this.finishLine = new THREE.Mesh(geometry, material);
+  this.finishLine.material.visible = false;
+  this.finishLine.position.x = 60 * 2.5;
+  this.finishLine.position.y = 60 * 2.5;
+  var z = this.heightmap.getHeightFromLayers(60, 60);
+  this.finishLine.position.z = z;
+  this.finishLine.lookAt(this.finishLine.position.x + 1, this.finishLine.position.y + 1, z);
+  this.scene.add(this.finishLine);
+
+  // Load Finish model
+  var mtlLoader = new THREE.MTLLoader();
+  mtlLoader.setPath('assets/models/');
+  mtlLoader.load('Finish.mtl', function(materials) {
+    materials.preload();
+    // Create model
+    var objLoader = new THREE.OBJLoader();
+    objLoader.setPath('assets/models/');
+    objLoader.setMaterials(materials);
+    // Load model
+    objLoader.load('Finish.obj', function(object) {
+      object.castShadow = true;
+      object.traverse(function(child) {
+        child.castShadow = true;
+        if(child.material) {
+          child.material.side = THREE.DoubleSide;
+        }
+      });
+      object.scale.set(0.1, 0.1, 0.1);
+      object.position.x = 2 * 2.5;
+      object.position.y = 2 * 2.5;
+      var z = that.heightmap.getHeightFromLayers(2, 2);
+      object.position.z = 101.5;
+      object.position.z = z - 0.25;
+      object.rotation.z = Math.PI / 4;
+      that.scene.add(object);
+
+      object = object.clone();
+      object.scale.set(0.1, 0.1, 0.1);
+      object.position.x = 60 * 2.5;
+      object.position.y = 60 * 2.5;
+      var z = that.heightmap.getHeightFromLayers(60, 60);
+      object.position.z = z - 0.25;
+      object.rotation.z = Math.PI / 4;
+      that.scene.add(object);
+    });
+  });
 }
 
 Game.prototype.createLights = function() {
@@ -247,6 +304,20 @@ Game.prototype.update = function() {
   this.player1.update();
   this.player2.update();
 
+  // Check finish line
+  if (this.finishLine) {
+    var collision = this.player1.getCollision(this.finishLine);
+    if (collision && collision.distance < 0.1) {
+      console.log("Player 1 wins!");
+      this.paused = true;
+    }
+    var collision = this.player2.getCollision(this.finishLine);
+    if (collision && collision.distance < 0.1) {
+      console.log("Player 2 wins!");
+      this.paused = true;
+    }
+  }
+
   // Render scene
   this.updateViews();
 
@@ -257,8 +328,10 @@ Game.prototype.update = function() {
   this.stats.end();
 
   // Request next frame
-  var game = this;
-  this.animationFrameId = requestAnimationFrame(function() { game.update(); });
+  if (!this.paused) {
+    var game = this;
+    this.animationFrameId = requestAnimationFrame(function() { game.update(); });
+  }
 }
 
 Game.prototype.stop = function() {

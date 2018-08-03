@@ -4,6 +4,7 @@ function Player(scene, world) {
   this.radius = 0.1;
   this.force = 8;
 
+  this.raycaster = new THREE.Raycaster();
   this.createBody();
   this.createModel();
 }
@@ -105,6 +106,17 @@ Player.prototype.getMeshRotation = function() {
   angle *= Math.sign(sign);
 
   return angle;
+}
+
+Player.prototype.getDirection = function() {
+  var vector = new THREE.Vector3(this.body.velocity.x, this.body.velocity.y, 0);
+  vector.normalize();
+  return vector;
+}
+
+Player.prototype.getCollision = function(mesh) {
+  this.raycaster.set(this.getPosition(), this.getDirection());
+  return this.raycaster.intersectObject(mesh)[0];
 }
 
 Player.prototype.update = function() {
