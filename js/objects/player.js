@@ -60,6 +60,16 @@ Player.prototype.getPosition = function() {
   // it's because it won't work, for unknown reasons
 }
 
+Player.prototype.setVelocity = function(x, y, z) {
+  this.body.velocity.x = x;
+  this.body.velocity.y = y;
+  this.body.velocity.z = z;
+}
+
+Player.prototype.getVelocity = function() {
+  return this.body.velocity;
+}
+
 Player.prototype.applyForce = function(x, y, z) {
   this.body.applyForce(new CANNON.Vec3(x, y, z), this.body.position);
 }

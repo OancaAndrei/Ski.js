@@ -169,19 +169,36 @@ Game.prototype.initWorld = function() {
   this.world = new CANNON.World();
   this.world.gravity.set(0, 0, -5.82); // m/s²
 
-  // Create a plane
-  var groundBody = new CANNON.Body({
-    mass: 0 // mass == 0 makes the body static
-  });
-  var groundShape = new CANNON.Plane();
-  groundBody.addShape(groundShape);
-  this.world.addBody(groundBody);
+  // Create box
+  var planes = [
+    // Axis, rotation, position
+    [1, 0, 0, 0, 0, 0, 0],
+    [1, 0, 0, -Math.PI/2, 0, 0, 0],
+    [1, 0, 0, Math.PI/2, 0, 63 * 2.5, 0],
+    [0, 1, 0, Math.PI/2, 0, 0, 0],
+    [0, 1, 0, -Math.PI/2, 63 * 2.5, 0, 0]
+  ];
+
+  for (var i = 0; i < planes.length; i++) {
+    var d = planes[i];
+    var groundShape = new CANNON.Plane();
+    var groundBody = new CANNON.Body({
+      mass: 0
+    });
+    groundBody.addShape(groundShape);
+    var rot = new CANNON.Vec3(d[0], d[1], d[2]);
+    groundBody.quaternion.setFromAxisAngle(rot, d[3]);
+    groundBody.position.x = d[4];
+    groundBody.position.y = d[5];
+    groundBody.position.z = d[6];
+    this.world.add(groundBody);
+  }
 
   // Create players
   this.player1 = new Player(this.scene, this.world);
   this.player2 = new Player(this.scene, this.world);
-  this.player1.setPosition(2.65, 2.5, 102.5);
-  this.player2.setPosition(2.5, 2.75, 102.5);
+  this.player1.setPosition(3.0, 2.85, 102.5);
+  this.player2.setPosition(2.85, 3.0, 102.5);
 
   // Create lights
   this.createLights();
@@ -296,6 +313,21 @@ Game.prototype.update = function() {
   var fixedTimeStep = 1.0 / 60.0; // seconds
   var maxSubSteps = 3;
   this.world.step(fixedTimeStep, this.delta, maxSubSteps);
+
+  // Make sure players don't fall through the map
+  if (this.heightmap.loaded) {
+    var players = [this.player1, this.player2];
+    for (var i = 0; i < players.length; i++) {
+      var player = players[i];
+      var position = player.getPosition();
+      var groundHeight = this.heightmap.getHeightFromLayers(Math.floor(position.x / 2.5), Math.floor(position.y / 2.5));
+      if (position.z < groundHeight - 2) {
+        this.player2.setPosition(position.x, position.y, groundHeight + 0.5);
+        var velocity = player.getVelocity();
+        player.setVelocity(velocity.x, velocity.y, 0.1);
+      }
+    }
+  }
 
   // Update debug renderer
   // this.cannonDebugRenderer.update();

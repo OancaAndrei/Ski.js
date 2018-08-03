@@ -1,4 +1,5 @@
 function Heightmap() {
+  this.loaded = false;
 }
 
 Heightmap.prototype.getChannels = function(image, channels) {
@@ -176,6 +177,8 @@ Heightmap.prototype.imagesToPlane = function(sources, scene, world, callback) {
 
     // Place obstacles
     that.placeObstacles();
+
+    that.loaded = true;
 
     // Callback
     callback();
