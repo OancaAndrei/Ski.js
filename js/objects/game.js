@@ -203,6 +203,16 @@ Game.prototype.initWorld = function() {
   // Create lights
   this.createLights();
 
+  // Create snow
+  this.snow1 = new SnowParticles(this.scene, this.player1);
+  this.snow2 = new SnowParticles(this.scene, this.player2);
+
+  // Create clouds
+  this.createClouds();
+
+  // Create sky
+  this.createSky();
+
   // Create heightmap
   this.heightmap = new Heightmap();
   this.heightmap.imagesToPlane(["levels/map_jump.png", "levels/map_jump_color.png"], this.scene, this.world, function() {
@@ -210,6 +220,24 @@ Game.prototype.initWorld = function() {
     that.createFinishLine();
   });
 
+}
+
+Game.prototype.createSky = function() {
+  var imagePrefix = "assets/textures/Skybox-";
+  var directions  = ["0", "2", "1", "3", "4", "5"];
+  var imageSuffix = ".jpg";
+  var skyGeometry = new THREE.CubeGeometry(300, 300, 100);
+  var materialArray = [];
+  for (var i = 0; i < 6; i++)
+  materialArray.push(new THREE.MeshBasicMaterial({
+    map: new THREE.TextureLoader().load(imagePrefix + directions[i] + imageSuffix),
+    side: THREE.BackSide
+  }));
+  var skyBox = new THREE.Mesh(skyGeometry, materialArray);
+  skyBox.position.x = 32 * 2.5;
+  skyBox.position.y = 32 * 2.5;
+  skyBox.position.z = 50 * 2.5;
+  this.scene.add(skyBox);
 }
 
 Game.prototype.createFinishLine = function() {
@@ -295,6 +323,33 @@ Game.prototype.createLights = function() {
   // this.scene.add(helper);
 }
 
+Game.prototype.createClouds = function() {
+  var geometry = new THREE.Geometry();
+
+  var texture = new THREE.TextureLoader().load('assets/textures/cloud.png');
+  texture.magFilter = THREE.LinearMipMapLinearFilter;
+  texture.minFilter = THREE.LinearMipMapLinearFilter;
+
+  var material = new THREE.MeshBasicMaterial({
+    transparent: true,
+    map: texture
+  });
+
+  var texture = material.map;
+  // texture.rotation = -Math.PI / 2;
+
+  for ( var i = 0; i < 50; i++ ) {
+    var plane = new THREE.Mesh( new THREE.PlaneGeometry( 10, 10 ), material );
+
+    plane.position.x = Math.random() * 200;
+    plane.position.y = Math.random() * 200;
+    plane.position.z = 120;
+    plane.lookAt(new THREE.Vector3(1, 1, 100));
+    plane.scale.x = plane.scale.z = plane.scale.y = Math.random() * Math.random() * 1.5 + 0.5;
+    this.scene.add(plane);
+  }
+}
+
 Game.prototype.reset = function() {
 }
 
@@ -331,6 +386,10 @@ Game.prototype.update = function() {
 
   // Update debug renderer
   // this.cannonDebugRenderer.update();
+
+  // Update snow
+  this.snow1.update();
+  this.snow2.update();
 
   // Update players
   this.player1.update();
