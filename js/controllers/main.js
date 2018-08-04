@@ -1,5 +1,6 @@
 App.controller('Main', function($scope) {
 
+  // Create game
   var game = new Game();
   game.init();
 
@@ -22,4 +23,11 @@ App.controller('Main', function($scope) {
       game.player1.jump();
     }
   });
+
+  // Create controller
+  var controller = new Controller(game.player1, game.player2);
+  // Init Tracker
+  var tracker = new Tracker(controller, controller.onPoseUpdate);
+  // Init PoseNet
+  loadPosenet(tracker);
 });
