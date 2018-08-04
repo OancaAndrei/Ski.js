@@ -6,6 +6,7 @@ function Game() {
   this.width = window.innerWidth;
   this.height = window.innerHeight;
   this.replay = false;
+  this.raycaster = new THREE.Raycaster();
 };
 
 Game.prototype.init = function() {
@@ -375,9 +376,12 @@ Game.prototype.update = function() {
     for (var i = 0; i < players.length; i++) {
       var player = players[i];
       var position = player.getPosition();
-      var groundHeight = this.heightmap.getHeightFromLayers(Math.floor(position.x / 2.5), Math.floor(position.y / 2.5));
-      if (position.z < groundHeight - 2) {
-        this.player2.setPosition(position.x, position.y, groundHeight + 0.5);
+      var point = player.getPosition();
+      point.z = 200;
+      this.raycaster.set(point, new THREE.Vector3(0, 0, -1)); // Point to the ground
+      var intersection = this.raycaster.intersectObject(this.heightmap.mesh)[0];
+      if (intersection && position.z < intersection.point.z - 0.1) {
+        player.setPosition(position.x, position.y, intersection.point.z + 0.2);
         var velocity = player.getVelocity();
         player.setVelocity(velocity.x, velocity.y, 0.1);
       }

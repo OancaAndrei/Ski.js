@@ -171,9 +171,9 @@ Heightmap.prototype.imagesToPlane = function(sources, scene, world, callback) {
     texture.rotation = Math.PI / 2;
 
     // Create mesh
-    mesh = new THREE.Mesh(geometry, material);
-    mesh.receiveShadow = true;
-    scene.add(mesh);
+    that.mesh = new THREE.Mesh(geometry, material);
+    that.mesh.receiveShadow = true;
+    scene.add(that.mesh);
 
     // Place obstacles
     that.placeObstacles();

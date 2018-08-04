@@ -55,7 +55,7 @@ Player.prototype.setPosition = function(x, y, z) {
 
 Player.prototype.getPosition = function() {
   if (!this.mesh) return {x: 0, y: 0, z: 0};
-  return this.mesh.position;
+  return new THREE.Vector3().copy(this.mesh.position);
   // If you're wondering why I haven't used the body's position
   // it's because it won't work, for unknown reasons
 }
